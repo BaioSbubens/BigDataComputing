@@ -1,2 +1,2 @@
 # BigDataComputing
-Homework of BDC
+Homework
