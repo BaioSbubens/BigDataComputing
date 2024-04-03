@@ -132,6 +132,3 @@ In moodle you find some files (e.g. output_uber10k_0.02_10_5_2.txt) showing you 
 
 4) Test your program using the datasets that we provide in the same section as this page, together with the outputs of our program on the datasets.
 
-SUBMISSION INSTRUCTIONS. Each group must submit a zip file containing its program (GxxxHW1.java or GxxxHW1.py) Please use a zip even for single and small files. Only one student per group must submit the file in Moodle Exam using the link provided in the Homework 1 section. Make sure that your code is free from compiling/run-time errors and that you use the file/variable names in the homework description, otherwise your score will be penalized. 
-
-If you have questions about the assignment, contact the teaching assistants (TAs) by email to bdc-course@dei.unipd.it . The subject of the email must be "HW1 - Group xxx", where xxx is your group ID. If needed, a zoom meeting between the TAs and the group will be organized.
