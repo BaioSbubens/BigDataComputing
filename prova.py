@@ -2,7 +2,7 @@ from pyspark import SparkContext, SparkConf
 import sys
 import os
 import random as random
-import csv
+import math
 
 
 
@@ -48,8 +48,10 @@ L = int(L)
 D=sys.argv[1]
 D = float(D)
 M=sys.argv[2]
+M = int(M)
 K=sys.argv[3]
 side=float(D)/(2*(2**(1/2)))
+diag = math.sqrt(2)
 #side = 1
 
 # 2. Read input file and subdivide it into L random partitions
@@ -59,15 +61,38 @@ rdd = sc.textFile(data_path).repartition(numPartitions=L)
 t_rdd = rdd.map(lambda line: line.split(","))
 doc = t_rdd.map(lambda x: (float(x[0]), float(x[1]))).cache()
 
-
-
-def tipo(doc):
-    return[cell for cell in doc.collect()][:20]#da completare
-
-
 #print(tipo(doc))
-cell = points_count_with_partition(doc)
-num_cell = cell.count()
-print("Output:", num_cell)
+#cell = points_count_with_partition(doc)
+#num_cell = cell.count()
+#print("Output:", num_cell)
 #print(doc.collect())
+#print(points_count_with_partition(doc).collect())
+
+def step_B(cells):
+    outliers = 0
+    uncertain = 0
+    for center in cells:
+        i,j = center[0]
+        tot_3x3 = 0
+        tot_7x7 = 0
+        for cell in cells:
+            x,y = cell[0]
+            d = math.sqrt((i-x)**2 + (j-y)**2)
+            if d <= diag:
+                tot_3x3 += cell[1]
+                #tot_7x7 += cell[1]
+            elif d <= 3*diag:
+                tot_7x7 += cell[1]
+            if tot_3x3 > M:
+                break
+        tot_7x7 += tot_3x3
+        if tot_7x7 <= M:
+            outliers += center[1]
+        elif (tot_3x3 <= M) and (tot_7x7 > M):
+            uncertain += center[1]
+    return (outliers, uncertain)
+cells = points_count_with_partition(doc).collect()
+outliers, uncertain = step_B(cells)
+print(f'number of sure outliers: {outliers}')
+print(f'number of uncertain outliers: {uncertain}')
 
