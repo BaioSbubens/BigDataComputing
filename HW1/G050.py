@@ -30,15 +30,16 @@ def ExactOutliers(points, D, M, K):
     print(f'Running time of ExactOutliers = {((finish - start)*1000):.0f} ms')
 
 
-def belong_cell(doc):
-    i=math.floor((doc[0]/side))
-    j=math.floor((doc[1]/side))
+def belong_cell(point,side):
+
+    i=math.floor((point[0]/side))
+    j=math.floor((point[1]/side))
     return ((i,j),)
 
 
-def cell_count_per_doc(doc):
+def points_count_per_cell(cell):
     pairs_dict = {}
-    for p in doc:
+    for p in cell:
         if p not in pairs_dict.keys():
             pairs_dict[p] = 1
         else:
@@ -47,15 +48,16 @@ def cell_count_per_doc(doc):
 
 
 
-def step_A(input):
-	points_count = (input.flatMap(belong_cell) # <-- MAP PHASE (R1)
-		.mapPartitions(cell_count_per_doc)    # <-- REDUCE PHASE (R1)
-		.groupByKey()                              # <-- SHUFFLE+GROUPING
-		.mapValues(lambda vals: sum(vals)))        # <-- REDUCE PHASE (R2)
-	return points_count
+def step_A(input,D):
 
-def step_B(cells):
-    diag = math.sqrt(2)
+    side = D/(2*math.sqrt(2))
+    points_count = (input.flatMap(lambda x: belong_cell(x,side)).
+                    mapPartitions(points_count_per_cell)
+                    .groupByKey()
+                    .mapValues(lambda vals: sum(vals)))        
+    return points_count
+
+def step_B(cells,M):
     outliers = 0
     uncertain = 0
     for center in cells:
@@ -64,11 +66,9 @@ def step_B(cells):
         tot_7x7 = 0
         for cell in cells:
             x,y = cell[0]
-            d =math.sqrt(((i-x)**2 + (j-y)**2))
-            if d <= diag:
+            if abs(x - i) <= 1 and abs(y - j) <= 1:
                 tot_3x3 += cell[1]
-                #tot_7x7 += cell[1]
-            elif d <= 3*diag:
+            elif abs(x - i) <= 3 and abs(y - j) <= 3:
                 tot_7x7 += cell[1]
             if tot_3x3 > M:
                 break
@@ -79,58 +79,62 @@ def step_B(cells):
             uncertain += center[1]
     return (outliers, uncertain)
 
-def first_k_cells(output_A):
+def first_k_cells(output_A,K):
     ordered = (output_A.map(lambda x: (x[1],x[0]))
                .sortByKey()
                .take(K))
     return ordered
 
-def MRApproxOutliers(point, D, M, K):
+def MRApproxOutliers(points, D, M, K):
     start = time.time()
-    output_A = step_A(point)
+    output_A = step_A(points,D)
     cells = output_A.collect()
-    outliers, uncertain = step_B(cells)
+    outliers, uncertain = step_B(cells,M)
     print(f'Number of sure outliers = {outliers}')
     print(f'Number of uncertain outliers =  {uncertain}')
 
-    for el in first_k_cells(output_A):
+    for el in first_k_cells(output_A,K):
         print(f'Cell: {el[1]} Size = {el[0]}')
 
     finish = time.time()
     
     print(f'Running time of MRApproxOutliers = {((finish - start)*1000):.0f} ms')
 
-# CHECKING NUMBER OF CMD LINE PARAMTERS
-assert len(sys.argv) == 6, "Usage: python provagruppo.py <D> <M> <K> <L> <file_name>" 
+def main():
 
-# SPARK SETUP
-conf = SparkConf().setAppName('provagruppo')
-sc = SparkContext(conf=conf)
-sc.setLogLevel("WARN")
+    # CHECKING NUMBER OF CMD LINE PARAMTERS
+    assert len(sys.argv) == 6, "Usage: python G050.py <D> <M> <K> <L> <file_name>" 
 
-# SETTING GLOBAL VARIABLES
-D = float(sys.argv[1])
-M = int(sys.argv[2])
-K = int(sys.argv[3])
-side = D/(2*math.sqrt(2))
+    # SPARK SETUP
+    conf = SparkConf().setAppName('G050')
+    sc = SparkContext(conf=conf)
+    sc.setLogLevel("WARN")
 
-# INPUT READING
+    # SETTING GLOBAL VARIABLES
+    D = float(sys.argv[1])
+    M = int(sys.argv[2])
+    K = int(sys.argv[3])
 
-# 1. Read number of partitions
-L = sys.argv[4]
-assert L.isdigit(), "L must be an integer"
-L = int(L)
+    # INPUT READING
 
-# 2. Read input file and subdivide it into L random partitions
-data_path = sys.argv[5]
-assert os.path.isfile(data_path), "File or folder not found"
-rawData = sc.textFile(data_path).repartition(numPartitions=L).map(lambda line: line.split(","))
-inputPoints= rawData.map(lambda x: (float(x[0]), float(x[1]))).cache()
+    # 1. Read number of partitions
+    L = sys.argv[4]
+    assert L.isdigit(), "L must be an integer"
+    L = int(L)
 
-print(f'{sys.argv[5]} D={D} M={M} K={K} L={L}')
-n = inputPoints.count()
-print(f'Number of points = {n}')
-if n<=200000:
-    listOfPoints = inputPoints.collect()
-    ExactOutliers(listOfPoints, D, M, K)
-MRApproxOutliers(inputPoints, D, M, K)
+    # 2. Read input file and subdivide it into L random partitions
+    data_path = sys.argv[5]
+    assert os.path.isfile(data_path), "File or folder not found"
+    rawData = sc.textFile(data_path).repartition(numPartitions=L).map(lambda line: line.split(","))
+    inputPoints= rawData.map(lambda x: (float(x[0]), float(x[1]))).cache()
+
+    print(f'{sys.argv[5]} D={D} M={M} K={K} L={L}')
+    n = inputPoints.count()
+    print(f'Number of points = {n}')
+    if n<=200000:
+        listOfPoints = inputPoints.collect()
+        ExactOutliers(listOfPoints, D, M, K)
+    MRApproxOutliers(inputPoints, D, M, K)
+
+if __name__ == "__main__":
+	main()
