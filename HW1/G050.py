@@ -6,7 +6,9 @@ import math
 import time
 
 def distance(point1, point2):
-    return (point1[0] - point2[0])**2 + (point1[1] - point2[1])**2
+    diff_i = point1[0] - point2[0]
+    diff_j = point1[1] - point2[1]
+    return diff_i * diff_i + diff_j * diff_j
 
 def ExactOutliers(points, D, M, K):
     start = time.time()
@@ -34,7 +36,7 @@ def belong_cell(point,side):
 
     i=math.floor((point[0]/side))
     j=math.floor((point[1]/side))
-    return ((i,j),)
+    return [(i,j)]
 
 
 def points_count_per_cell(cell):
@@ -51,8 +53,8 @@ def points_count_per_cell(cell):
 def step_A(input,D):
 
     side = D/(2*math.sqrt(2))
-    points_count = (input.flatMap(lambda x: belong_cell(x,side)).
-                    mapPartitions(points_count_per_cell)
+    points_count = (input.flatMap(lambda x: belong_cell(x,side))
+                    .mapPartitions(points_count_per_cell)
                     .groupByKey()
                     .mapValues(lambda vals: sum(vals)))        
     return points_count
@@ -61,26 +63,27 @@ def step_B(cells,M):
     outliers = 0
     uncertain = 0
     for center in cells:
-        i,j = center[0]
-        tot_3x3 = 0
-        tot_7x7 = 0
-        for cell in cells:
-            x,y = cell[0]
-            if abs(x - i) <= 1 and abs(y - j) <= 1:
-                tot_3x3 += cell[1]
-            elif abs(x - i) <= 3 and abs(y - j) <= 3:
-                tot_7x7 += cell[1]
-            if tot_3x3 > M:
-                break
-        tot_7x7 += tot_3x3
-        if tot_7x7 <= M:
-            outliers += center[1]
-        elif tot_3x3 <= M:
-            uncertain += center[1]
+        if center[1] <= M:
+            i,j = center[0]
+            tot_3x3 = 0
+            tot_7x7 = 0
+            for cell in cells:
+                x,y = cell[0]
+                if abs(x - i) <= 1 and abs(y - j) <= 1:
+                    tot_3x3 += cell[1]
+                elif abs(x - i) <= 3 and abs(y - j) <= 3:
+                    tot_7x7 += cell[1]
+                if tot_3x3 > M:
+                    break
+            tot_7x7 += tot_3x3
+            if tot_7x7 <= M:
+                outliers += center[1]
+            elif tot_3x3 <= M:
+                uncertain += center[1]
     return (outliers, uncertain)
 
 def first_k_cells(output_A,K):
-    ordered = (output_A.map(lambda x: (x[1],x[0]))
+    ordered = (output_A.map(lambda x : (x[1], x[0]))
                .sortByKey()
                .take(K))
     return ordered
