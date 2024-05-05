@@ -28,7 +28,7 @@ def ExactOutliers(points, D, M, K):
             l.append(i)
     print("Number of outliers:", num_outliers)
     for k in sorted(l)[:K]:
-        print(f'Point: {k}')
+        print(f'Point: ({k[0]},{k[1]})')
     finish = time.time()
     print(f'Running time of ExactOutliers = {((finish - start)*1000):.0f} ms')
 
@@ -95,39 +95,39 @@ def MRApproxOutliers(points, D, M, K):
     print(f'Number of uncertain points =  {uncertain}')
 
     for el in first_k_cells(output_A,K):
-        print(f'Cell: {el[1]}  Size = {el[0]}')
+        print(f'Cell: ({el[1][0]},{el[1][1]})  Size = {el[0]}')
 
     finish = time.time()
     print(f'Running time of MRApproxOutliers = {((finish - start)*1000):.0f} ms')
 
 def main():
     # CHECKING NUMBER OF CMD LINE PARAMTERS
-    assert len(sys.argv) == 6, "Usage: python G050.py <D> <M> <K> <L> <file_name>" 
+    assert len(sys.argv) == 6, "Usage: python G050HW1.py <D> <M> <K> <L> <file_name>" 
 
     # SPARK SETUP
-    conf = SparkConf().setAppName('G050')
+    conf = SparkConf().setAppName('G050HW1')
     sc = SparkContext(conf=conf)
     sc.setLogLevel("WARN")
 
     # SETTING GLOBAL VARIABLES
-    D = float(sys.argv[1])
-    M = int(sys.argv[2])
-    K = int(sys.argv[3])
+    D = float(sys.argv[2])
+    M = int(sys.argv[3])
+    K = int(sys.argv[4])
 
     # INPUT READING
 
     # 1. Read number of partitions
-    L = sys.argv[4]
+    L = sys.argv[5]
     assert L.isdigit(), "L must be an integer"
     L = int(L)
 
     # 2. Read input file and subdivide it into L random partitions
-    data_path = sys.argv[5]
+    data_path = sys.argv[1]
     assert os.path.isfile(data_path), "File or folder not found"
     rawData = sc.textFile(data_path).repartition(numPartitions=L).map(lambda line: line.split(","))
     inputPoints= rawData.map(lambda x: (float(x[0]), float(x[1]))).cache()
 
-    print(f'{sys.argv[5]} D={D} M={M} K={K} L={L}')
+    print(f'{sys.argv[1]} D={D} M={M} K={K} L={L}')
     n = inputPoints.count()
     print(f'Number of points = {n}')
     if n<=200000:

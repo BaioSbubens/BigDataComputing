@@ -1,0 +1,17 @@
+uber-100k.csv D=0.02 M=10 K=5 L=2
+Number of points = 100000
+Number of Outliers = 673
+Point: (40.9148,-74.2213)
+Point: (40.8674,-73.1731)
+Point: (40.9552,-74.2396)
+Point: (40.5608,-74.5518)
+Point: (40.9924,-73.9904)
+Running time of ExactOutliers = 61655 ms
+Number of sure outliers = 435
+Number of uncertain points = 658
+Cell: (5779,-10459)  Size = 1
+Cell: (5752,-10431)  Size = 1
+Cell: (5759,-10442)  Size = 1
+Cell: (5764,-10498)  Size = 1
+Cell: (5759,-10454)  Size = 1
+Running time of MRApproxOutliers = 960 ms

@@ -1,0 +1,25 @@
+TestN15-input.txt D=1.0 M=3 K=9 L=2
+Number of points = 15
+Number of Outliers = 9
+Point: (3.21,4.6)
+Point: (0.5,4.1)
+Point: (1.1,5.0)
+Point: (1.51,3.2)
+Point: (4.32,4.3)
+Point: (1.11,5.1)
+Point: (1.52,3.6)
+Point: (4.11,4.11)
+Point: (0.4,0.9)
+Running time of ExactOutliers = 7 ms
+Number of sure outliers = 7
+Number of uncertain points = 4
+Cell: (4,10)  Size = 1
+Cell: (2,3)  Size = 1
+Cell: (9,13)  Size = 1
+Cell: (1,2)  Size = 1
+Cell: (11,11)  Size = 1
+Cell: (12,12)  Size = 1
+Cell: (1,11)  Size = 1
+Cell: (2,2)  Size = 1
+Cell: (4,9)  Size = 1
+Running time of MRApproxOutliers = 376 ms

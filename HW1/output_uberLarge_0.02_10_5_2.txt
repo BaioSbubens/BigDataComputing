@@ -1,0 +1,10 @@
+uber-large.csv D=0.02 M=10 K=5 L=2
+Number of points = 1880795
+Number of sure outliers = 613
+Number of uncertain points = 1984
+Cell: (5781,-10507)  Size = 1
+Cell: (5761,-10477)  Size = 1
+Cell: (5765,-10397)  Size = 1
+Cell: (5775,-10483)  Size = 1
+Cell: (5763,-10408)  Size = 1
+Running time of MRApproxOutliers = 1750 ms
