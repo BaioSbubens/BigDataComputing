@@ -1,0 +1,9 @@
+/data/BDC2324/artificial1M_9_100.csv M=10 K=200 L=16
+Number of points = 1000108
+Running time of MRFFT Round 1 = 638 ms
+Running time of MRFFT Round 2 = 104 ms
+Running time of MRFFT Round 3 = 391 ms
+Radius = 0.60045445
+Number of sure outliers = 100
+Number of uncertain points = 0
+Running time of MRApproxOutliers = 523 ms

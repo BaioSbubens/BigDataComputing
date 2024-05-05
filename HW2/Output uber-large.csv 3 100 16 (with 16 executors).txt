@@ -1,0 +1,9 @@
+/data/BDC2324/uber-large.csv M=3 K=100 L=16
+Number of points = 1880795
+Running time of MRFFT Round 1 = 216 ms
+Running time of MRFFT Round 2 = 82 ms
+Running time of MRFFT Round 3 = 172 ms
+Radius = 0.10125376
+Number of sure outliers = 11
+Number of uncertain points = 42
+Running time of MRApproxOutliers = 420 ms
