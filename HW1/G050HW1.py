@@ -32,12 +32,10 @@ def ExactOutliers(points, D, M, K):
     finish = time.time()
     print(f'Running time of ExactOutliers = {((finish - start)*1000):.0f} ms')
 
-
 def belong_cell(point,side):
     i=math.floor((point[0]/side))
     j=math.floor((point[1]/side))
     return [(i,j)]
-
 
 def points_count_per_cell(cell):
     pairs_dict = {}
