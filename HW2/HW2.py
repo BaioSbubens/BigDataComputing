@@ -186,3 +186,14 @@ def main():
 if __name__ == "__main__":
 	main()
 
+'''
+def SequentialFFT(points,K):
+    C= [(points[0])]
+    while len(C) < K:  
+        dis = []
+        for point in points:
+            dis.append(min([distance(point, center) for center in C]))
+        pos = np.argmax(dis)
+        C.append(points[pos])
+    return C
+    '''
