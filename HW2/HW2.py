@@ -120,6 +120,15 @@ def SequentialFFT(points, K):
     points = list(points)
     return [0,SequentialFFT(points,K)]
 
+def radius(inputPoints, centroids):
+    r = 0
+    for el in inputPoints:
+        dist = min(distance(el, center) for center in centroids)
+        if dist > r:
+            r = dist
+    return [r]
+
+
 def MRFFT(InputPoints,K):
     #Round1
     start_R1 = time.time()
@@ -131,9 +140,17 @@ def MRFFT(InputPoints,K):
     final_centroids = SequentialFFT(corset,K)
     finish_R2 = time.time()
     R2_time = finish_R2 - start_R2
+    #Round3
+    start_R3 = time.time()
+    rad = (InputPoints.mapPartitions(lambda x: radius(x,final_centroids))
+              .reduce(lambda x,y: max(x,y)))
+    finish_R3 = time.time()
+
     print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 2 = {((finish_R2 - start_R2)  *1000):.0f} ms')
+    print(f'Running time of MRFFT Round 3 = {((finish_R3 - start_R3)  *1000):.0f} ms')
     print(f'Final Centroids = {final_centroids}')
+    print(f'Radius = {rad}')
 
 
 
