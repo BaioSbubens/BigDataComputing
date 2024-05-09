@@ -5,6 +5,11 @@ import random as random
 import math
 import time
 
+# SPARK SETUP
+conf = SparkConf().setAppName('G050')
+sc = SparkContext(conf=conf)
+sc.setLogLevel("WARN")
+
 def distance(point1, point2):
     diff_i = point1[0] - point2[0]
     diff_j = point1[1] - point2[1]
@@ -114,13 +119,8 @@ def SequentialFFT(points, K):
         C.append(far_p)
     return C
 
-#def MRFFT(points, K):
-
-#def compute_corset(points,K):
-    points = list(points)
-    return [0,SequentialFFT(points,K)]
-
-def radius(inputPoints, centroids):
+def radius(inputPoints, C):
+    centroids = C
     r = 0
     for el in inputPoints:
         dist = min(distance(el, center) for center in centroids)
@@ -133,16 +133,15 @@ def MRFFT(InputPoints,K):
     #Round1
     start_R1 = time.time()
     corset = InputPoints.mapPartitions(lambda x:SequentialFFT(list(x),K)).collect()
-    finish_R1 = time.time()
-    R1_time = finish_R1-start_R1
+    finish_R1 = time.time() 
     #Round2
     start_R2 = time.time()
     final_centroids = SequentialFFT(corset,K)
     finish_R2 = time.time()
-    R2_time = finish_R2 - start_R2
     #Round3
     start_R3 = time.time()
-    rad = (InputPoints.mapPartitions(lambda x: radius(x,final_centroids))
+    C = sc.broadcast(final_centroids)
+    rad = (InputPoints.mapPartitions(lambda x: radius(x, C.value))
               .reduce(lambda x,y: max(x,y)))
     finish_R3 = time.time()
 
@@ -151,6 +150,7 @@ def MRFFT(InputPoints,K):
     print(f'Running time of MRFFT Round 3 = {((finish_R3 - start_R3)  *1000):.0f} ms')
     print(f'Final Centroids = {final_centroids}')
     print(f'Radius = {rad}')
+    return rad
 
 
 
@@ -159,11 +159,6 @@ def main():
 
     # CHECKING NUMBER OF CMD LINE PARAMTERS
     assert len(sys.argv) == 5, "Usage: python G050.py <file_name> <M> <K> <L> " 
-
-    # SPARK SETUP
-    conf = SparkConf().setAppName('G050')
-    sc = SparkContext(conf=conf)
-    sc.setLogLevel("WARN")
 
     # SETTING GLOBAL VARIABLES
     
@@ -177,22 +172,16 @@ def main():
     
     # 2. Read input file and subdivide it into L random partitions
     data_path = sys.argv[1]
-    assert os.path.isfile(data_path), "File or folder not found"
+    #assert os.path.isfile(data_path), "File or folder not found"
     rawData = sc.textFile(data_path).repartition(numPartitions=L).map(lambda line: line.split(","))
     inputPoints= rawData.map(lambda x: (float(x[0]),float(x[1]))).cache()
     
     print(f'{sys.argv[1]} M={M} K={K} L={L}')
     n = inputPoints.count()
     print(f'Number of points = {n}')
-    """
-    if n<=200000:
-        
-        ExactOutliers(listOfPoints, D, M, K)
-    """
-    #MRApproxOutliers(inputPoints, D, M, K)
-    listOfPoints = inputPoints.collect()
-    #print(SequentialFFT(listOfPoints,K))
-    print(MRFFT(inputPoints,K))
+    D = MRFFT(inputPoints,K)
+    MRApproxOutliers(inputPoints, D, M)
+    
 
 if __name__ == "__main__":
 	main()
