@@ -103,11 +103,11 @@ def MRApproxOutliers(points, D, M):
 def SequentialFFT(points, K):
     C = [points[0]]
     while len(C) < K :
-        far_d=0
+        far_d= 0
         far_p = None
         for el in points:
             if el not in C:
-                d = max(distance(el,center) for center in C)
+                d = min(distance(el,center) for center in C)
                 if d > far_d:
                     far_d = d
                     far_p = el
@@ -116,6 +116,24 @@ def SequentialFFT(points, K):
 
 #def MRFFT(points, K):
 
+#def compute_corset(points,K):
+    points = list(points)
+    return [0,SequentialFFT(points,K)]
+
+def MRFFT(InputPoints,K):
+    #Round1
+    start_R1 = time.time()
+    corset = InputPoints.mapPartitions(lambda x:SequentialFFT(list(x),K)).collect()
+    finish_R1 = time.time()
+    R1_time = finish_R1-start_R1
+    #Round2
+    start_R2 = time.time()
+    final_centroids = SequentialFFT(corset,K)
+    finish_R2 = time.time()
+    R2_time = finish_R2 - start_R2
+    print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
+    print(f'Running time of MRFFT Round 2 = {((finish_R2 - start_R2)  *1000):.0f} ms')
+    print(f'Final Centroids = {final_centroids}')
 
 
 
@@ -156,7 +174,9 @@ def main():
     """
     #MRApproxOutliers(inputPoints, D, M, K)
     listOfPoints = inputPoints.collect()
-    print(SequentialFFT(listOfPoints,K))
+    #print(SequentialFFT(listOfPoints,K))
+    print(MRFFT(inputPoints,K))
 
 if __name__ == "__main__":
 	main()
+
