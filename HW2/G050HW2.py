@@ -4,6 +4,7 @@ import os
 import random as random
 import math
 import time
+import numpy as np
 
 # SPARK SETUP
 conf = SparkConf().setAppName('G050')
@@ -14,36 +15,12 @@ def distance(point1, point2):
     diff_i = point1[0] - point2[0]
     diff_j = point1[1] - point2[1]
     return diff_i * diff_i + diff_j * diff_j
-"""
-def ExactOutliers(points, D, M, K):
-    start = time.time()
-    t=D*D
-    l = []
-    num_outliers = 0
-    for i in points:
-        s = 0
-        for j in points:
-            d = distance(i,j)
-            if d < t:
-                s += 1
-            if s > M:
-                break
-        if s <= M:
-            num_outliers += 1
-            l.append(i)
-    print("Number of Outliers:", num_outliers)
-    for k in sorted(l)[:K]:
-        print(f'Point: {k}')
-    finish = time.time()
-    print(f'Running time of ExactOutliers = {((finish - start)*1000):.0f} ms')
-"""
 
 def belong_cell(point,side):
 
     i=math.floor((point[0]/side))
     j=math.floor((point[1]/side))
     return [(i,j)]
-
 
 def points_count_per_cell(cell):
     pairs_dict = {}
@@ -53,8 +30,6 @@ def points_count_per_cell(cell):
         else:
             pairs_dict[p] += 1
     return [(key, pairs_dict[key]) for key in pairs_dict.keys()]
-
-
 
 def step_A(input,D):
 
@@ -87,13 +62,6 @@ def step_B(cells,M):
             elif tot_3x3 <= M:
                 uncertain += center[1]
     return (outliers, uncertain)
-"""
-def first_k_cells(output_A,K):
-    ordered = (output_A.map(lambda x : (x[1],x[0]))
-               .sortByKey()
-               .take(K))
-    return ordered
-"""
 
 def MRApproxOutliers(points, D, M):
     start = time.time()
@@ -101,22 +69,18 @@ def MRApproxOutliers(points, D, M):
     cells = output_A.collect()
     outliers, uncertain = step_B(cells,M)
     print(f'Number of sure outliers = {outliers}')
-    print(f'Number of uncertain outliers =  {uncertain}')
+    print(f'Number of uncertain points =  {uncertain}')
     finish = time.time()
     print(f'Running time of MRApproxOutliers = {((finish - start)*1000):.0f} ms')
 
-def SequentialFFT(points, K):
-    C = [points[0]]
-    while len(C) < K :
-        far_d= 0
-        far_p = None
-        for el in points:
-            if el not in C:
-                d = min(distance(el,center) for center in C)
-                if d > far_d:
-                    far_d = d
-                    far_p = el
-        C.append(far_p)
+def SequentialFFT(points,K):
+    C= [points[0]]
+    while len(C) < K:  
+        dis = []
+        for point in points:
+            dis.append(min([distance(point, center) for center in C]))
+        pos = np.argmax(dis)
+        C.append(points[pos])
     return C
 
 def radius(inputPoints, C):
@@ -127,7 +91,6 @@ def radius(inputPoints, C):
         if dist > r:
             r = dist
     return [r]
-
 
 def MRFFT(InputPoints,K):
     #Round1
@@ -145,16 +108,11 @@ def MRFFT(InputPoints,K):
               .reduce(lambda x,y: max(x,y)))
     rad = rad_sqr**0.5
     finish_R3 = time.time()
-
     print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 2 = {((finish_R2 - start_R2)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 3 = {((finish_R3 - start_R3)  *1000):.0f} ms')
-    #print(f'Final Centroids = {final_centroids}')
     print(f'Radius = {rad}')
     return rad
-
-
-
 
 def main():
 
@@ -183,7 +141,6 @@ def main():
     D = MRFFT(inputPoints,K)
     MRApproxOutliers(inputPoints, D, M)
     
-
 if __name__ == "__main__":
 	main()
 
