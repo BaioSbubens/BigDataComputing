@@ -141,14 +141,15 @@ def MRFFT(InputPoints,K):
     #Round3
     start_R3 = time.time()
     C = sc.broadcast(final_centroids)
-    rad = (InputPoints.mapPartitions(lambda x: radius(x, C.value))
+    rad_sqr = (InputPoints.mapPartitions(lambda x: radius(x, C.value))
               .reduce(lambda x,y: max(x,y)))
+    rad = rad_sqr**0.5
     finish_R3 = time.time()
 
     print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 2 = {((finish_R2 - start_R2)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 3 = {((finish_R3 - start_R3)  *1000):.0f} ms')
-    print(f'Final Centroids = {final_centroids}')
+    #print(f'Final Centroids = {final_centroids}')
     print(f'Radius = {rad}')
     return rad
 
