@@ -73,14 +73,16 @@ def MRApproxOutliers(points, D, M):
     finish = time.time()
     print(f'Running time of MRApproxOutliers = {((finish - start)*1000):.0f} ms')
 
-def SequentialFFT(points,K):
-    C= [points[0]]
-    while len(C) < K:  
-        dis = []
-        for point in points:
-            dis.append(min([distance(point, center) for center in C]))
+def SequentialFFT(points, K):
+    dis = np.zeros(len(points))
+    C = [points[0]]
+    for i in range(1, len(points)):
+        dis[i] = distance(points[i], C[0])
+    while len(C) < K:
         pos = np.argmax(dis)
         C.append(points[pos])
+        for i in range(len(points)):
+            dis[i] = min(dis[i], distance(points[i], points[pos])) 
     return C
 
 def radius(inputPoints, C):
@@ -106,7 +108,7 @@ def MRFFT(InputPoints,K):
     C = sc.broadcast(final_centroids)
     rad_sqr = (InputPoints.mapPartitions(lambda x: radius(x, C.value))
               .reduce(lambda x,y: max(x,y)))
-    rad = rad_sqr**0.5
+    rad = rad_sqr**0.5 # Since our distance function is not squared, for efficenty reason
     finish_R3 = time.time()
     print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 2 = {((finish_R2 - start_R2)  *1000):.0f} ms')
