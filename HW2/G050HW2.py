@@ -113,7 +113,7 @@ def MRFFT(InputPoints,K):
     print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 2 = {((finish_R2 - start_R2)  *1000):.0f} ms')
     print(f'Running time of MRFFT Round 3 = {((finish_R3 - start_R3)  *1000):.0f} ms')
-    print(f'Radius = {rad}')
+    print(f'Radius = {round(rad,8)}')
     return rad
 
 def main():
