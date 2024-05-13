@@ -84,14 +84,9 @@ def SequentialFFT(points, K):
             dis[i] = min(dis[i], distance(points[i], points[pos])) 
     return C
 
-def radius(inputPoints, C):
+def radius(point, C):
     centroids = C
-    r = 0
-    for el in inputPoints:
-        dist = min(distance(el, center) for center in centroids)
-        if dist > r:
-            r = dist
-    return [r]
+    return min(distance(el, point) for el in centroids)
 
 def MRFFT(InputPoints,K):
     #Round1
@@ -99,15 +94,15 @@ def MRFFT(InputPoints,K):
     corset = InputPoints.mapPartitions(lambda x:SequentialFFT(list(x),K)).persist()
     finish_R1 = time.time() 
     #Round2
-    cor1 = corset.collect()
+    cor1= corset.collect()
     start_R2 = time.time()
     final_centroids = SequentialFFT(cor1,K)
     finish_R2 = time.time()
     #Round3
-    start_R3 = time.time()
     C = sc.broadcast(final_centroids)
-    rad_sqr = (InputPoints.mapPartitions(lambda x: radius(x, C.value))
-              .reduce(lambda x,y: max(x,y)))
+    start_R3 = time.time()
+    rad_sqr = (InputPoints.map(lambda point: radius(point, C.value))
+              .reduce(max))
     rad = rad_sqr**0.5 # Since our distance function is not squared, for efficenty reason
     finish_R3 = time.time()
     print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
