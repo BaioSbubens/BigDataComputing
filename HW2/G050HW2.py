@@ -1,4 +1,4 @@
-from pyspark import SparkContext, SparkConf
+from pyspark import SparkContext, SparkConf, StorageLevel
 import sys
 import os
 import random as random
@@ -74,30 +74,25 @@ def MRApproxOutliers(points, D, M):
     print(f'Running time of MRApproxOutliers = {((finish - start)*1000):.0f} ms')
 
 def SequentialFFT(points, K):
-    dis = np.zeros(len(points))
-    C = [points[0]]
-    for i in range(1, len(points)):
-        dis[i] = distance(points[i], C[0])
-    while len(C) < K:
-        pos = np.argmax(dis)
-        C.append(points[pos])
-        for i in range(len(points)):
-            dis[i] = min(dis[i], distance(points[i], points[pos])) 
-    return C
+    P = np.array(points)
+    output = [points[0]]
+    C = np.full((len(points),2),output[-1])
+    D = np.sum((C-P)*(C-P), axis =1)
+    while len(output) < K:
+        output.append(points[np.argmax(D)])
+        C = np.full((len(points),2),output[-1])
+        D = np.minimum(D,np.sum((C-P)*(C-P), axis =1))
+    return output
 
-def radius(inputPoints, C):
+
+def radius(point, C):
     centroids = C
-    r = 0
-    for el in inputPoints:
-        dist = min(distance(el, center) for center in centroids)
-        if dist > r:
-            r = dist
-    return [r]
+    return min(distance(el, point) for el in centroids)
 
 def MRFFT(InputPoints,K):
     #Round1
     start_R1 = time.time()
-    corset = InputPoints.mapPartitions(lambda x:SequentialFFT(list(x),K)).collect()
+    corset = InputPoints.mapPartitions(lambda x:SequentialFFT(list(x),K)).persist(StorageLevel.DISK_ONLY).collect()
     finish_R1 = time.time() 
     #Round2
     start_R2 = time.time()
@@ -106,8 +101,8 @@ def MRFFT(InputPoints,K):
     #Round3
     start_R3 = time.time()
     C = sc.broadcast(final_centroids)
-    rad_sqr = (InputPoints.mapPartitions(lambda x: radius(x, C.value))
-              .reduce(lambda x,y: max(x,y)))
+    rad_sqr = (InputPoints.map(lambda point: radius(point, C.value))
+              .reduce(max))
     rad = rad_sqr**0.5 # Since our distance function is not squared, for efficenty reason
     finish_R3 = time.time()
     print(f'Running time of MRFFT Round 1 = {((finish_R1 - start_R1)  *1000):.0f} ms')
@@ -117,7 +112,7 @@ def MRFFT(InputPoints,K):
     return rad
 
 def main():
-
+    start_total = time.time()
     # CHECKING NUMBER OF CMD LINE PARAMTERS
     assert len(sys.argv) == 5, "Usage: python G050.py <file_name> <M> <K> <L> " 
 
@@ -135,14 +130,15 @@ def main():
     data_path = sys.argv[1]
     #assert os.path.isfile(data_path), "File or folder not found"
     rawData = sc.textFile(data_path).repartition(numPartitions=L).map(lambda line: line.split(","))
-    inputPoints= rawData.map(lambda x: (float(x[0]),float(x[1]))).cache()
+    inputPoints= rawData.map(lambda x: (float(x[0]),float(x[1]))).persist(StorageLevel.DISK_ONLY)
     
     print(f'{sys.argv[1]} M={M} K={K} L={L}')
     n = inputPoints.count()
     print(f'Number of points = {n}')
     D = MRFFT(inputPoints,K)
     MRApproxOutliers(inputPoints, D, M)
-    
+    finish_total = time.time()
+    print(f'Total Running time {((finish_total - start_total )  *1000):.0f} ms')
 if __name__ == "__main__":
 	main()
 
