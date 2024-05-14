@@ -8,6 +8,7 @@ import numpy as np
 
 # SPARK SETUP
 conf = SparkConf().setAppName('G050')
+conf.set("spark.locality.wait", "0s")
 sc = SparkContext(conf=conf)
 sc.setLogLevel("WARN")
 
@@ -84,7 +85,6 @@ def SequentialFFT(points, K):
         D = np.minimum(D,np.sum((C-P)*(C-P), axis =1))
     return output
 
-
 def radius(point, C):
     centroids = C
     return min(distance(el, point) for el in centroids)
@@ -100,8 +100,8 @@ def MRFFT(InputPoints,K):
     finish_R2 = time.time()
     #Round3
     start_R3 = time.time()
-    C = sc.broadcast(final_centroids)
-    rad_sqr = (InputPoints.map(lambda point: radius(point, C.value))
+    C = sc.broadcast(final_centroids).value
+    rad_sqr = (InputPoints.map(lambda point: radius(point, C))
               .reduce(max))
     rad = rad_sqr**0.5 # Since our distance function is not squared, for efficenty reason
     finish_R3 = time.time()
@@ -112,7 +112,6 @@ def MRFFT(InputPoints,K):
     return rad
 
 def main():
-    start_total = time.time()
     # CHECKING NUMBER OF CMD LINE PARAMTERS
     assert len(sys.argv) == 5, "Usage: python G050.py <file_name> <M> <K> <L> " 
 
@@ -137,8 +136,6 @@ def main():
     print(f'Number of points = {n}')
     D = MRFFT(inputPoints,K)
     MRApproxOutliers(inputPoints, D, M)
-    finish_total = time.time()
-    print(f'Total Running time {((finish_total - start_total )  *1000):.0f} ms')
 if __name__ == "__main__":
 	main()
 
