@@ -70,7 +70,7 @@ def MRApproxOutliers(points, D, M):
     cells = output_A.collect()
     outliers, uncertain = step_B(cells,M)
     print(f'Number of sure outliers = {outliers}')
-    print(f'Number of uncertain points =  {uncertain}')
+    print(f'Number of uncertain points = {uncertain}')
     finish = time.time()
     print(f'Running time of MRApproxOutliers = {((finish - start)*1000):.0f} ms')
 
