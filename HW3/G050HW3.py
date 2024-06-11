@@ -27,14 +27,16 @@ def process_batch(time, batch):
     batch_items = batch.map(lambda s: int(s)).collect()
     
 
-    # Update the histogram and reservoir
+    
     for item in batch_items:
         if streamLength >= THRESHOLD:
             stopping_condition.set()
             return
         streamLength +=1
+        #True frequent items
         histogram[item] = histogram.get(item, 0) + 1
 
+        #Reservoir sampling
         if len(reservoir) < reservoir_size:
             reservoir.append(item)
         else:
@@ -47,7 +49,7 @@ def process_batch(time, batch):
         if item in S:
             S[item] += 1
         else:
-            if random.random() < r/THRESHOLD:
+            if random.random() <= r/THRESHOLD:
                 S[item] = 1
     
 
@@ -67,7 +69,7 @@ if __name__ == '__main__':
     bucket_width = math.ceil(1 / epsilon)
     
     # Spark configuration
-    conf = SparkConf().setMaster("local[*]").setAppName("GxxxHW3")
+    conf = SparkConf().setMaster("local[*]").setAppName("G050HW3")
     sc = SparkContext(conf=conf)
     ssc = StreamingContext(sc, 0.01)  # Batch duration of 0.01 seconds
     ssc.sparkContext.setLogLevel("ERROR")
@@ -94,6 +96,7 @@ if __name__ == '__main__':
 
     print("INPUT PROPERTIES")
     print("n =", streamLength, "phi =", phi, "epsilon =", epsilon, "delta =", delta, "port =", portExp)
+    
     print("EXACT ALGORTIHM")
     print("Number of items in the data structure =", len(histogram))
     print("Number of true frequent items =", len(true_frequent_items))
@@ -112,12 +115,9 @@ if __name__ == '__main__':
     
     print("STICKY SAMPLING")
     print("Number of items in the Hash Table =", len(S))
-    S1 = S.copy()
-    for item in list(S1.keys()):
-        if S1[item] < (delta - epsilon)*THRESHOLD:
-            del S1[item] 
-    print("Number of estimated frequent items =", len(S1))   
+    S_frequent = {key : val for key,val in S.items() if val >= (phi - epsilon)*THRESHOLD}
+    print("Number of estimated frequent items =", len(S_frequent))   
     print("Estimated frequent items:")
-    for item in sorted(S1):
+    for item in sorted(S_frequent):
         sign = "+" if item in true_frequent_items else '-'
         print(item, sign)
