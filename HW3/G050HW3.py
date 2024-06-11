@@ -13,7 +13,6 @@ from collections import Counter
 
 # Sticky Sampling parameters
 S = {}
-S1= {}
 current_bucket = 0
 bucket_width = 0
 
@@ -24,7 +23,7 @@ reservoir_size = 0
 
 # Operations to perform after receiving an RDD 'batch' at time 'time'
 def process_batch(time, batch):
-    global streamLength, histogram, current_bucket, bucket_width, S,S1, epsilon, phi, delta, reservoir, reservoir_size
+    global streamLength, histogram, current_bucket, bucket_width, S, epsilon, phi, delta, reservoir, reservoir_size
     batch_items = batch.map(lambda s: int(s)).collect()
     
 
@@ -50,17 +49,7 @@ def process_batch(time, batch):
         else:
             if random.random() < r/THRESHOLD:
                 S[item] = 1
-    S1 = S.copy()
-    for item in list(S1.keys()):
-        if S1[item] < (delta - epsilon)*THRESHOLD:
-            del S1[item]    
-"""
-        if streamLength[0] % bucket_width == 0:
-            current_bucket += 1
-            for key in list(S.keys()):
-                if S[key] < current_bucket:
-                    del S[key]
-"""
+    
 
 
 if __name__ == '__main__':
@@ -123,7 +112,11 @@ if __name__ == '__main__':
     
     print("STICKY SAMPLING")
     print("Number of items in the Hash Table =", len(S))
-    print("Number of estimated frequent items =", len(S1))
+    S1 = S.copy()
+    for item in list(S1.keys()):
+        if S1[item] < (delta - epsilon)*THRESHOLD:
+            del S1[item] 
+    print("Number of estimated frequent items =", len(S1))   
     print("Estimated frequent items:")
     for item in sorted(S1):
         sign = "+" if item in true_frequent_items else '-'
