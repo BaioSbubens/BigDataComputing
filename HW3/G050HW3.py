@@ -13,11 +13,10 @@ from collections import Counter
 
 # Sticky Sampling parameters
 S = {}
+S1= {}
 current_bucket = 0
 bucket_width = 0
-epsilon = 0
-phi = 0
-delta = 0
+
 
 # Reservoir Sampling parameters
 reservoir = []
@@ -25,8 +24,9 @@ reservoir_size = 0
 
 # Operations to perform after receiving an RDD 'batch' at time 'time'
 def process_batch(time, batch):
-    global streamLength, histogram, current_bucket, bucket_width, S, epsilon, phi, delta, reservoir, reservoir_size
+    global streamLength, histogram, current_bucket, bucket_width, S,S1, epsilon, phi, delta, reservoir, reservoir_size
     batch_items = batch.map(lambda s: int(s)).collect()
+    
 
     # Update the histogram and reservoir
     for item in batch_items:
@@ -42,20 +42,26 @@ def process_batch(time, batch):
             rand_index = random.randint(0, streamLength - 1)
             if rand_index < reservoir_size:
                 reservoir[rand_index] = item
-        '''
+        
         # Sticky Sampling
+        r = (math.log(1/(delta * phi)))/epsilon
         if item in S:
             S[item] += 1
         else:
-            if random.random() < phi:
+            if random.random() < r/THRESHOLD:
                 S[item] = 1
-
+    S1 = S.copy()
+    for item in list(S1.keys()):
+        if S1[item] < (delta - epsilon)*THRESHOLD:
+            del S1[item]    
+"""
         if streamLength[0] % bucket_width == 0:
             current_bucket += 1
             for key in list(S.keys()):
                 if S[key] < current_bucket:
                     del S[key]
-'''
+"""
+
 
 if __name__ == '__main__':
     assert len(sys.argv) == 6, "USAGE: n, phi, epsilon, delta, port"
@@ -116,9 +122,9 @@ if __name__ == '__main__':
         print(item, sign)
     
     print("STICKY SAMPLING")
-    print("Number of items in the Hash Table =",)
-    print("Number of estimated frequent items =",)
+    print("Number of items in the Hash Table =", len(S))
+    print("Number of estimated frequent items =", len(S1))
     print("Estimated frequent items:")
-    for item in sorted():
+    for item in sorted(S1):
         sign = "+" if item in true_frequent_items else '-'
         print(item, sign)
