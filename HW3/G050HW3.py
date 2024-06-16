@@ -30,7 +30,6 @@ def process_batch(batch):
                 reservoir[rand_index] = int(item)
         
         # Sticky Sampling
-        r = (math.log(1/(delta * phi)))/epsilon
         if item in sticky:
             sticky[item] += 1
         else:
@@ -67,9 +66,10 @@ if __name__ == '__main__':
     # Reservoir Sampling parameters
     reservoir = []
     reservoir_size = math.ceil(1 / phi)
-
+    
     # Sticky Sampling parameters
     sticky = {}
+    r = (math.log(1/(delta * phi)))/epsilon
 
     # Process the stream
     stream = ssc.socketTextStream("algo.dei.unipd.it", portExp, StorageLevel.MEMORY_AND_DISK)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     
     print("INPUT PROPERTIES")
     print("n =", streamLength, "phi =", phi, "epsilon =", epsilon, "delta =", delta, "port =", portExp)
-    print("EXACT ALGORTIHM")
+    print("EXACT ALGORITHM")
     print("Number of items in the data structure =", len(histogram))
     true_frequent_items = sorted([int(item) for item in histogram if histogram[item] / streamLength >= phi])
     print("Number of true frequent items =", len(true_frequent_items))
