@@ -2,7 +2,7 @@
 
 This repository contains two main directories:  
 
-## 1. Outlier Detection with PySpark using MapReduce farthest-fisrt-traversal algorithm  
+## 1. Outlier Detection with PySpark  
 This directory includes:  
 - Code for detecting outliers using PySpark in a distributed system, leveraging the MapReduce implementation of the Farthest-First Traversal algorithm.
 - The Uber fare dataset.  
@@ -11,7 +11,7 @@ This directory includes:
 ## 2. Frequent Item Detection in Streaming Settings  
 This directory includes:  
 - Code for identifying the most frequent items in a data stream.  
-- Implementations of various algorithms, such as **Reservoir Sampling** and **Sticky Sampling** and the comparasion with the **Exact Algorithm** .  
+- Implementations of various algorithms, such as **Reservoir Sampling** and **Sticky Sampling** and the comparison with the **Exact Algorithm** .  
 
   
 
